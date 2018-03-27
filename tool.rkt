@@ -5,7 +5,7 @@
          framework
          racket/gui/base)
 
-(define dest "delta:public_html/tmp/x.rkt")
+(define dest "login.eecs.northwestern.edu:public_html/tmp/pull-tool.rkt")
 
 (define-local-member-name fetch-code)
 
@@ -26,7 +26,7 @@
                [shortcut-prefix (cons 'shift (get-default-shortcut-prefix))]
                [callback (λ (_1 _2) (push-code))])
           (super file-menu:between-open-and-revert file-menu))
-        
+
         (define/public (push-code)
           (define txt (get-editor))
           (send txt save-file)
@@ -34,18 +34,21 @@
           (unless (or (send txt is-modified?)
                       (not filename))
             (define sp (open-output-string))
-            (define failed?
+            (define succeeded?
               (parameterize ([current-output-port sp]
                              [current-error-port sp])
                 (system* "/usr/bin/scp" (~a filename) dest)))
-            (message-box "DrRacket"
-                         (~a "scp finished\n\n"
-                             (get-output-string sp)))))
-        
+            (cond
+              [succeeded?
+               (message-box "DrRacket" "Sent!")]
+              [else
+               (message-box "DrRacket"
+                            (format "scp error: ~a" (get-output-string sp)))])))
+
         (super-new)))
-    
+
     (drracket:get/extend:extend-unit-frame send-code-frame-mixin)
-    
+
     (define (phase1) (void))
     (define (phase2) (void))))
 
